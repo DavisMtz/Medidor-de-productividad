@@ -11,11 +11,11 @@ function setupSheet() {
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(["ID/Timestamp", "Fecha", "Mes", "Tipo"]);
+    sheet.appendRow(["ID/Timestamp", "Fecha", "Mes", "Tipo", "Monto", "Pedido"]);
     // Congelar la primera fila
     sheet.setFrozenRows(1);
     // Formatear los encabezados
-    sheet.getRange("A1:D1").setFontWeight("bold").setBackground("#f3f4f6");
+    sheet.getRange("A1:F1").setFontWeight("bold").setBackground("#f3f4f6");
   }
 }
 
@@ -47,11 +47,14 @@ function getData() {
 
   let todayCalls = 0;
   let monthCalls = 0;
+  let todaySalesAmount = 0;
+  let monthSalesAmount = 0;
+  let transfers = 0; 
   let daysWorkedSet = new Set();
   let todaysRecords = []; // Para racha y pico
 
   data.forEach(row => {
-    // Transformar la celda a texto pase lo que pase
+    // --- CORRECCIÓN: Transformar la celda a texto pase lo que pase ---
     let rowDateStr = row[1];
     if (rowDateStr instanceof Date) {
       rowDateStr = Utilities.formatDate(rowDateStr, TZ, "yyyy-MM-dd");
@@ -65,22 +68,33 @@ function getData() {
     } else {
       rowMonthStr = String(rowMonthStr);
     }
+    // -----------------------------------------------------------------
 
     const type = String(row[3]);
+    const amount = Number(row[4]) || 0;
 
     // Cálculos mensuales
     if (rowMonthStr === monthStr) {
-      if (type === "Llamada") {
+      if (type === "Llamada" || type === "Venta") {
         monthCalls++;
         daysWorkedSet.add(rowDateStr);
+      }
+      if (type === "Venta") {
+        monthSalesAmount += amount;
       }
     }
 
     // Cálculos diarios
     if (rowDateStr === todayStr) {
-      todaysRecords.push({ timestamp: Number(row[0]), type: type });
-      if (type === "Llamada") {
+      todaysRecords.push({ timestamp: Number(row[0]), type: type, amount: amount });
+      if (type === "Llamada" || type === "Venta") {
         todayCalls++;
+      }
+      if (type === "Venta") {
+        todaySalesAmount += amount;
+      }
+      if (type === "Transferencia") {
+        transfers++;
       }
     }
   });
@@ -95,28 +109,25 @@ function getData() {
   if (productividad >= 90) estatus = "Buena";
   else if (productividad >= 70) estatus = "Promedio";
 
-  // Nuevas métricas derivadas
-  let faltantesHoy = Math.max(0, GOAL_PER_DAY - todayCalls);
-  let promDiario = Math.round((monthCalls / diasLaborados) * 10) / 10; // Redondeado a 1 decimal
-
-  // Historial, Racha y Pico
+  // Nuevas métricas: Historial, Racha y Pico
   let last3 = todaysRecords.slice(-3).reverse();
   let recentHistory = last3.map(r => {
     let timeStr = Utilities.formatDate(new Date(r.timestamp), TZ, "HH:mm");
-    return `${timeStr} - ${r.type}`;
+    let desc = r.type;
+    if(r.type === 'Venta') desc += ` ($${r.amount})`;
+    return `${timeStr} - ${desc}`;
   });
 
   const oneHourAgo = now.getTime() - (60 * 60 * 1000);
-  let streakCount = todaysRecords.filter(r => r.type === 'Llamada' && r.timestamp >= oneHourAgo).length;
+  let streakCount = todaysRecords.filter(r => (r.type === 'Llamada' || r.type === 'Venta') && r.timestamp >= oneHourAgo).length;
 
   let hoursCount = {};
   todaysRecords.forEach(r => {
-      if (r.type === 'Llamada') {
+      if (r.type === 'Llamada' || r.type === 'Venta') {
           let h = Utilities.formatDate(new Date(r.timestamp), TZ, "HH");
           hoursCount[h] = (hoursCount[h] || 0) + 1;
       }
   });
-  
   let peakHour = null;
   let maxCallsInHour = 0;
   for (let h in hoursCount) {
@@ -134,12 +145,13 @@ function getData() {
   return {
     todayCalls,
     monthCalls,
+    todaySalesAmount,
+    monthSalesAmount,
+    transfers,
     diasLaborados,
     productividad: Math.round(productividad * 100) / 100,
     estatus,
     metaTotalMensual,
-    faltantesHoy,
-    promDiario,
     recentHistory,
     streakCount,
     peakText
@@ -149,7 +161,7 @@ function getData() {
 /**
  * Añade un nuevo registro desde el frontend
  */
-function addRecord(type) {
+function addRecord(type, amount = 0, order = "") {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME);
   if(!sheet) { setupSheet(); sheet = ss.getSheetByName(SHEET_NAME); }
@@ -158,7 +170,7 @@ function addRecord(type) {
   const dateStr = Utilities.formatDate(now, TZ, "yyyy-MM-dd");
   const monthStr = Utilities.formatDate(now, TZ, "yyyy-MM");
 
-  sheet.appendRow([now.getTime(), dateStr, monthStr, type]);
+  sheet.appendRow([now.getTime(), dateStr, monthStr, type, amount, order]);
   return getData();
 }
 
