@@ -36,7 +36,7 @@
     <nav class="bg-indigo-600 text-white shadow-md p-4 sticky top-0 z-10">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold flex items-center gap-2">
-                <i class="fa-solid fa-headset"></i> Panel de Llamadas
+                <i class="fa-solid fa-chart-line"></i> Mi Productividad
             </h1>
             <div id="loadingIndicator" class="hidden flex items-center gap-2 text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
                 <div class="spinner w-4 h-4"></div> Sincronizando...
@@ -67,8 +67,8 @@
             </div>
         </section>
 
-        <!-- Métricas Grid Principal -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <!-- Métricas Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <!-- Llamadas Hoy -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
                 <div class="text-slate-500 text-xs font-semibold uppercase mb-1">Llamadas (Hoy)</div>
@@ -76,38 +76,36 @@
                     <div id="uiTodayCalls" class="text-3xl font-bold text-indigo-600">0</div>
                 </div>
             </div>
-            <!-- Meta Faltantes -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-                <div class="text-slate-500 text-xs font-semibold uppercase mb-1" title="Llamadas necesarias para alcanzar la meta de 63">Faltantes (Hoy)</div>
-                <div id="uiFaltantes" class="text-2xl font-bold text-rose-500">0</div>
-            </div>
             <!-- Llamadas Mes -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
                 <div class="text-slate-500 text-xs font-semibold uppercase mb-1">Llamadas (Mes)</div>
                 <div id="uiMonthCalls" class="text-2xl font-bold text-slate-700">0</div>
             </div>
-            <!-- Promedio Diario -->
+            <!-- Ventas Hoy -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-                <div class="text-slate-500 text-xs font-semibold uppercase mb-1" title="Promedio de llamadas por cada día laborado">Prom. Diario</div>
-                <div id="uiPromedio" class="text-2xl font-bold text-slate-700">0</div>
+                <div class="text-slate-500 text-xs font-semibold uppercase mb-1">Ventas Hoy</div>
+                <div id="uiTodaySales" class="text-2xl font-bold text-emerald-600">$0.00</div>
             </div>
-        </div>
+            <!-- Ventas Mes -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
+                <div class="text-slate-500 text-xs font-semibold uppercase mb-1">Ventas Mes</div>
+                <div id="uiMonthSales" class="text-2xl font-bold text-slate-700">$0.00</div>
+            </div>
+            <!-- Transferencias -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 col-span-2 md:col-span-4 flex justify-between items-center">
+                <div class="text-slate-500 text-sm font-semibold uppercase">Transferencias (Hoy)</div>
+                <div id="uiTransfers" class="text-2xl font-bold text-slate-600 bg-slate-100 px-4 py-1 rounded-lg">0</div>
+            </div>
 
-        <!-- Sub Métricas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <!-- Racha (Streak) -->
-            <div class="bg-gradient-to-r from-orange-500 to-rose-500 rounded-xl shadow-sm text-white p-4 flex flex-col justify-center items-center text-center">
-                <div class="text-white/90 text-xs font-semibold uppercase mb-1 flex items-center gap-1">
-                    <i class="fa-solid fa-fire"></i> Racha (Última hr)
-                </div>
-                <div class="text-2xl font-bold"><span id="uiStreak">0</span><span class="text-sm font-medium opacity-80 ml-1">llamadas</span></div>
+            <div class="bg-gradient-to-r from-orange-500 to-rose-500 rounded-xl shadow-sm text-white p-4 col-span-2 flex flex-col justify-center items-center text-center">
+                <div class="text-white/90 text-xs font-semibold uppercase mb-1 flex items-center gap-1"><i class="fa-solid fa-fire"></i> Racha (Última hr)</div>
+                <div class="text-2xl font-bold"><span id="uiStreak">0</span><span class="text-sm font-medium opacity-80 ml-1">movimientos</span></div>
             </div>
 
             <!-- Pico de Productividad -->
-            <div class="bg-indigo-50 rounded-xl shadow-sm border border-indigo-100 p-4 flex flex-col justify-center items-center text-center">
-                <div class="text-indigo-500 text-xs font-semibold uppercase mb-1 flex items-center gap-1">
-                    <i class="fa-solid fa-arrow-trend-up"></i> Mejor Hora Hoy
-                </div>
+            <div class="bg-indigo-50 rounded-xl shadow-sm border border-indigo-100 p-4 col-span-2 flex flex-col justify-center items-center text-center">
+                <div class="text-indigo-500 text-xs font-semibold uppercase mb-1 flex items-center gap-1"><i class="fa-solid fa-arrow-trend-up"></i> Mejor Hora Hoy</div>
                 <div id="uiPeak" class="text-xl font-bold text-indigo-700">Aún sin datos</div>
             </div>
         </div>
@@ -124,23 +122,29 @@
                 <ul id="uiHistory" class="space-y-1 text-slate-600">
                     <li class="italic text-xs text-slate-400">Cargando...</li>
                 </ul>
-                <div class="absolute text-[10px] text-slate-400 right-3 top-3" title="Atajos de teclado"><i class="fa-solid fa-keyboard"></i> <b>'</b> (Llamada)</div>
+                <div class="absolute text-[10px] text-slate-400 right-3 top-3" title="Atajos de teclado"><i class="fa-solid fa-keyboard"></i> <b>'</b> | <b>¿</b> | <b>+</b></div>
             </div>
         </div>
-
-        <div class="flex justify-center mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
-            <!-- Botón Llamada -->
-            <button onclick="registrar('Llamada')" class="btn-action bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl p-8 shadow-sm transition-all transform active:scale-95 flex flex-col items-center justify-center gap-3 w-full md:w-2/3">
-                <i class="fa-solid fa-headset text-4xl mb-1"></i>
-                <span class="font-bold text-2xl">+1 Llamada</span>
-                <span class="text-sm text-indigo-200">Presiona la tecla <b>'</b></span>
+            <button onclick="registrar('Llamada')" class="btn-action bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl p-6 shadow-sm transition-all transform active:scale-95 flex flex-col items-center justify-center gap-2">
+                <i class="fa-solid fa-headset text-3xl mb-1"></i>
+                <span class="font-bold text-lg">+1 Llamada</span>
+            </button>
+
+            <button onclick="abrirModalVenta()" class="btn-action bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl p-6 shadow-sm transition-all transform active:scale-95 flex flex-col items-center justify-center gap-2">
+                <i class="fa-solid fa-sack-dollar text-3xl mb-1"></i>
+                <span class="font-bold text-lg">+1 Venta</span>
+            </button>
+
+            <button onclick="registrar('Transferencia')" class="btn-action bg-slate-600 hover:bg-slate-700 text-white rounded-xl p-6 shadow-sm transition-all transform active:scale-95 flex flex-col items-center justify-center gap-2">
+                <i class="fa-solid fa-phone-arrow-right text-3xl mb-1"></i>
+                <span class="font-bold text-lg">+1 Transferencia</span>
             </button>
 
         </div>
 
-        <!-- Botón Deshacer -->
-        <div class="mt-8 text-center border-t border-slate-200 pt-6">
+        <div class="mt-6 text-center">
             <button id="btnUndo" onclick="deshacer()" disabled class="bg-rose-100 text-rose-600 hover:bg-rose-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold py-3 px-6 rounded-full transition-colors flex items-center justify-center mx-auto gap-2">
                 <i class="fa-solid fa-rotate-left"></i> Deshacer último (<span id="undoCountText">0</span>/2)
             </button>
@@ -149,15 +153,40 @@
 
     </main>
 
+    <!-- Modal Venta -->
+    <div id="modalVenta" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 px-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform scale-95 transition-transform" id="modalContent">
+            <div class="bg-emerald-600 p-4 text-white">
+                <h3 class="text-lg font-bold"><i class="fa-solid fa-tag mr-2"></i>Registrar Nueva Venta</h3>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-600 mb-1">Monto de la venta ($)</label>
+                    <input type="number" id="ventaMonto" placeholder="Ej. 1500.00" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-600 mb-1">Número de Pedido</label>
+                    <input type="text" id="ventaPedido" placeholder="Ej. PED-12345" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="flex gap-3 justify-end">
+                    <button onclick="cerrarModalVenta()" class="px-5 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 font-semibold transition-colors">Cancelar</button>
+                    <button onclick="guardarVenta()" class="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm transition-colors flex items-center gap-2">
+                        Guardar Venta
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts Logica -->
     <script>
         const isAppsScript = typeof google !== 'undefined' && google.script;
         let undosDisponibles = 0; // Límite de 2 por sesión
 
-        // Mocks para previsualización rápida
-        let mockData = { todayCalls: 12, monthCalls: 45, diasLaborados: 1, productividad: 71.4, estatus: 'Promedio', recentHistory: ['10:30 - Llamada', '10:15 - Llamada'], streakCount: 4, peakText: '10:00 - 11:00', faltantesHoy: 51, promDiario: 45.0 };
+        // Mocks para previsualización fuera de Apps Script
+        let mockData = { todayCalls: 12, monthCalls: 45, todaySalesAmount: 0, monthSalesAmount: 2500, transfers: 2, diasLaborados: 1, productividad: 71.4, estatus: 'Promedio', recentHistory: ['10:30 - Llamada', '10:15 - Venta ($500)'], streakCount: 4, peakText: '10:00 - 11:00' };
 
-        // Wrapper para llamar Apps Script
+        // Wrapper para llamar Apps Script o Mock
         function runBackend(funcName, args = []) {
             mostrarCarga(true);
             return new Promise((resolve, reject) => {
@@ -167,12 +196,15 @@
                         .withFailureHandler(err => { mostrarCarga(false); alert("Error de red"); reject(err); })
                         [funcName].apply(null, args);
                 } else {
-                    // Simulación local
+                    // Simulación para previsualización
                     setTimeout(() => {
                         if(funcName === 'addRecord') {
-                            if(args[0]==='Llamada') { mockData.todayCalls++; mockData.faltantesHoy = Math.max(0, 63 - mockData.todayCalls); }
+                            if(args[0]==='Llamada') mockData.todayCalls++;
+                            if(args[0]==='Transferencia') mockData.transfers++;
+                            if(args[0]==='Venta') { mockData.todayCalls++; mockData.todaySalesAmount += Number(args[1]); }
                         }
                         if(funcName === 'undoLast') {
+                            // Mock básico de deshacer
                             if(mockData.todayCalls > 0) mockData.todayCalls--;
                         }
                         mostrarCarga(false);
@@ -195,11 +227,38 @@
 
         // Acciones
         function registrar(tipo) {
-            playSound('pop'); 
-            runBackend('addRecord', [tipo]).then(res => {
+            playSound(tipo === 'Transferencia' ? 'pop' : 'pop'); 
+            runBackend('addRecord', [tipo, 0, ""]).then(res => {
                 registrarHistorial();
                 actualizarUI(res);
                 showToast(`¡${tipo} registrada!`);
+            });
+        }
+
+        function abrirModalVenta() {
+            document.getElementById('modalVenta').classList.remove('hidden');
+            document.getElementById('modalContent').classList.remove('scale-95');
+            document.getElementById('modalContent').classList.add('scale-100');
+            document.getElementById('ventaMonto').value = '';
+            document.getElementById('ventaPedido').value = '';
+            document.getElementById('ventaMonto').focus();
+        }
+
+        function cerrarModalVenta() {
+            document.getElementById('modalVenta').classList.add('hidden');
+        }
+
+        function guardarVenta() {
+            const monto = parseFloat(document.getElementById('ventaMonto').value) || 0;
+            const pedido = document.getElementById('ventaPedido').value || "Sin número";
+            if (monto <= 0) { alert("Por favor ingresa un monto válido."); return; }
+            
+            cerrarModalVenta();
+            playSound('cash');
+            runBackend('addRecord', ["Venta", monto, pedido]).then(res => {
+                registrarHistorial();
+                actualizarUI(res);
+                showToast(`¡Venta registrada!`);
             });
         }
 
@@ -232,19 +291,15 @@
             document.getElementById('uiTodayCalls').innerText = data.todayCalls;
             document.getElementById('uiMonthCalls').innerText = data.monthCalls;
             
-            // Nuevos contadores
-            const uiFaltantes = document.getElementById('uiFaltantes');
-            uiFaltantes.innerText = data.faltantesHoy;
-            if(data.faltantesHoy === 0) {
-                uiFaltantes.classList.replace('text-rose-500', 'text-emerald-500');
-            } else {
-                uiFaltantes.classList.replace('text-emerald-500', 'text-rose-500');
-            }
-
-            document.getElementById('uiPromedio').innerText = data.promDiario;
+            // Formatear moneda
+            const formatMoney = (val) => new Intl.NumberFormat('es-MX', {style: 'currency', currency: 'MXN'}).format(val);
+            document.getElementById('uiTodaySales').innerText = formatMoney(data.todaySalesAmount);
+            document.getElementById('uiMonthSales').innerText = formatMoney(data.monthSalesAmount);
+            
+            document.getElementById('uiTransfers').innerText = data.transfers;
             document.getElementById('uiDays').innerText = data.diasLaborados;
             
-            // Sub métricas
+            // Nuevos UI Elements
             document.getElementById('uiStreak').innerText = data.streakCount || 0;
             document.getElementById('uiPeak').innerText = data.peakText || 'Aún sin datos';
 
@@ -262,7 +317,7 @@
             }
 
             // Actualizar porcentaje y estatus
-            const prod = Math.min(data.productividad, 100); 
+            const prod = Math.min(data.productividad, 100); // Para visual de anillo, max 100%
             document.getElementById('uiProdPercent').innerText = data.productividad + '%';
             
             const circle = document.getElementById('prodRing');
@@ -288,7 +343,7 @@
             }
         }
 
-        // --- FUNCIONES: Sonido, Toasts y Atajos ---
+        // --- NUEVAS FUNCIONES: Sonido, Toasts y Atajos ---
         
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
@@ -307,6 +362,14 @@
                     gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
                     osc.start();
                     osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'cash') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(1600, audioCtx.currentTime + 0.05);
+                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.15);
                 }
             } catch(e) { console.log("Audio bloqueado."); }
         }
@@ -329,14 +392,27 @@
         }
 
         document.addEventListener('keydown', (e) => {
-            // Evitar conflictos si por alguna razón escribe en un campo
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            // Ignorar atajos si el usuario está escribiendo en un campo de texto (input)
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                // Envío con "Enter" si el modal está abierto
+                if (e.key === 'Enter' && !document.getElementById('modalVenta').classList.contains('hidden')) {
+                    guardarVenta();
+                }
+                return;
+            }
 
-            // Atajos solicitados (sin ventas ni transferencias)
+            // Atajos solicitados
             if (e.key === "'") {
                 e.preventDefault();
                 registrar('Llamada');
+            } else if (e.key === "¿") {
+                e.preventDefault();
+                abrirModalVenta();
+            } else if (e.key === "+") {
+                e.preventDefault();
+                registrar('Transferencia');
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                // Ctrl+Z para deshacer rápido
                 e.preventDefault();
                 if(undosDisponibles > 0) deshacer();
             }
