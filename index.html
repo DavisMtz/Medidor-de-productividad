@@ -11,21 +11,21 @@
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .status-Buena { color: #10b981; } /* Emerald */
-        .status-Promedio { color: #f59e0b; } /* Amber */
-        .status-Debemos { color: #ef4444; } /* Red */
-        
+
+        .status-Buena { color: #10b981; }
+        .status-Promedio { color: #f59e0b; }
+        .status-Debemos { color: #ef4444; }
+
         .progress-ring__circle {
             transition: stroke-dashoffset 0.35s;
             transform: rotate(-90deg);
             transform-origin: 50% 50%;
         }
 
-        /* Estilos para Toasts */
         .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 50; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { background: white; border-left: 4px solid #10b981; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 12px 20px; border-radius: 8px; display: flex; align-items: center; gap: 10px; font-weight: 600; transform: translateX(120%); animation: slideIn 0.3s forwards, fadeOut 0.3s 2.5s forwards; }
         .toast.error { border-left-color: #ef4444; }
+        .toast.warn { border-left-color: #f59e0b; }
         @keyframes slideIn { to { transform: translateX(0); } }
         @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
     </style>
@@ -45,7 +45,7 @@
     </nav>
 
     <main class="max-w-4xl mx-auto mt-6 px-4">
-        
+
         <!-- Estado de Productividad -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 flex flex-col md:flex-row items-center gap-6">
             <div class="relative w-32 h-32 flex-shrink-0">
@@ -61,7 +61,7 @@
                 <h2 class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Estatus del Mes</h2>
                 <div id="uiStatus" class="text-3xl font-bold mt-1 mb-2 status-Debemos">Cargando...</div>
                 <p class="text-slate-600 text-sm">
-                    Meta de <span class="font-bold">63</span> llamadas por día laborado.
+                    Meta de <span id="uiGoal" class="font-bold">63</span> llamadas por día laborado.
                     <br>Días laborados este mes: <span id="uiDays" class="font-bold">0</span>
                 </p>
             </div>
@@ -69,24 +69,18 @@
 
         <!-- Métricas Grid Principal -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <!-- Llamadas Hoy -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-                <div class="text-slate-500 text-xs font-semibold uppercase mb-1">Llamadas (Hoy)</div>
-                <div class="flex items-end gap-2">
-                    <div id="uiTodayCalls" class="text-3xl font-bold text-indigo-600">0</div>
-                </div>
+                <div class="text-slate-500 text-xs font-semibold uppercase mb-1" title="Llamadas + transferencias registradas hoy">Llamadas (Hoy)</div>
+                <div id="uiTodayCalls" class="text-3xl font-bold text-indigo-600">0</div>
             </div>
-            <!-- Meta Faltantes -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-                <div class="text-slate-500 text-xs font-semibold uppercase mb-1" title="Llamadas necesarias para alcanzar la meta de 63">Faltantes (Hoy)</div>
+                <div class="text-slate-500 text-xs font-semibold uppercase mb-1" title="Llamadas necesarias para alcanzar la meta del día">Faltantes (Hoy)</div>
                 <div id="uiFaltantes" class="text-2xl font-bold text-rose-500">0</div>
             </div>
-            <!-- Llamadas Mes -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-                <div class="text-slate-500 text-xs font-semibold uppercase mb-1">Llamadas (Mes)</div>
+                <div class="text-slate-500 text-xs font-semibold uppercase mb-1" title="Llamadas + transferencias del mes en curso">Llamadas (Mes)</div>
                 <div id="uiMonthCalls" class="text-2xl font-bold text-slate-700">0</div>
             </div>
-            <!-- Promedio Diario -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
                 <div class="text-slate-500 text-xs font-semibold uppercase mb-1" title="Promedio de llamadas por cada día laborado">Prom. Diario</div>
                 <div id="uiPromedio" class="text-2xl font-bold text-slate-700">0</div>
@@ -94,8 +88,7 @@
         </div>
 
         <!-- Sub Métricas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <!-- Racha (Streak) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div class="bg-gradient-to-r from-orange-500 to-rose-500 rounded-xl shadow-sm text-white p-4 flex flex-col justify-center items-center text-center">
                 <div class="text-white/90 text-xs font-semibold uppercase mb-1 flex items-center gap-1">
                     <i class="fa-solid fa-fire"></i> Racha (Última hr)
@@ -103,7 +96,13 @@
                 <div class="text-2xl font-bold"><span id="uiStreak">0</span><span class="text-sm font-medium opacity-80 ml-1">llamadas</span></div>
             </div>
 
-            <!-- Pico de Productividad -->
+            <div class="bg-gradient-to-r from-sky-500 to-cyan-500 rounded-xl shadow-sm text-white p-4 flex flex-col justify-center items-center text-center">
+                <div class="text-white/90 text-xs font-semibold uppercase mb-1 flex items-center gap-1">
+                    <i class="fa-solid fa-share-from-square"></i> Transferidas (Mes)
+                </div>
+                <div class="text-2xl font-bold"><span id="uiMonthTransfers">0</span><span class="text-sm font-medium opacity-80 ml-1">total</span></div>
+            </div>
+
             <div class="bg-indigo-50 rounded-xl shadow-sm border border-indigo-100 p-4 flex flex-col justify-center items-center text-center">
                 <div class="text-indigo-500 text-xs font-semibold uppercase mb-1 flex items-center gap-1">
                     <i class="fa-solid fa-arrow-trend-up"></i> Mejor Hora Hoy
@@ -115,8 +114,7 @@
         <!-- Botones de Acción -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
             <h3 class="text-lg font-bold text-slate-800">Registrar Movimiento</h3>
-            
-            <!-- Mini-Historial -->
+
             <div class="text-sm bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm w-full md:w-auto relative">
                 <div class="font-semibold text-slate-600 flex items-center gap-2 mb-2">
                     <i class="fa-solid fa-clock-rotate-left text-slate-400"></i> Historial Reciente
@@ -124,19 +122,24 @@
                 <ul id="uiHistory" class="space-y-1 text-slate-600">
                     <li class="italic text-xs text-slate-400">Cargando...</li>
                 </ul>
-                <div class="absolute text-[10px] text-slate-400 right-3 top-3" title="Atajos de teclado"><i class="fa-solid fa-keyboard"></i> <b>'</b> (Llamada)</div>
+                <div class="absolute text-[10px] text-slate-400 right-3 top-3" title="Atajos de teclado">
+                    <i class="fa-solid fa-keyboard"></i> <b>'</b> Llamada · <b>t</b> Transferencia
+                </div>
             </div>
         </div>
 
-        <div class="flex justify-center mb-4">
-            
-            <!-- Botón Llamada -->
-            <button onclick="registrar('Llamada')" class="btn-action bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl p-8 shadow-sm transition-all transform active:scale-95 flex flex-col items-center justify-center gap-3 w-full md:w-2/3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <button data-type="Llamada" onclick="registrar('Llamada')" class="btn-action bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl p-8 shadow-sm transition-all transform active:scale-95 flex flex-col items-center justify-center gap-3">
                 <i class="fa-solid fa-headset text-4xl mb-1"></i>
                 <span class="font-bold text-2xl">+1 Llamada</span>
                 <span class="text-sm text-indigo-200">Presiona la tecla <b>'</b></span>
             </button>
 
+            <button data-type="Transferencia" onclick="registrar('Transferencia')" class="btn-action bg-sky-600 hover:bg-sky-700 text-white rounded-xl p-8 shadow-sm transition-all transform active:scale-95 flex flex-col items-center justify-center gap-3">
+                <i class="fa-solid fa-share-from-square text-4xl mb-1"></i>
+                <span class="font-bold text-2xl">+1 Transferencia</span>
+                <span class="text-sm text-sky-200">Presiona la tecla <b>t</b></span>
+            </button>
         </div>
 
         <!-- Botón Deshacer -->
@@ -149,128 +152,139 @@
 
     </main>
 
-    <!-- Scripts Logica -->
     <script>
         const isAppsScript = typeof google !== 'undefined' && google.script;
-        let undosDisponibles = 0; // Límite de 2 por sesión
+        let undosDisponibles = 0;
+        let isLoading = false;
 
-        // Mocks para previsualización rápida
-        let mockData = { todayCalls: 12, monthCalls: 45, diasLaborados: 1, productividad: 71.4, estatus: 'Promedio', recentHistory: ['10:30 - Llamada', '10:15 - Llamada'], streakCount: 4, peakText: '10:00 - 11:00', faltantesHoy: 51, promDiario: 45.0 };
+        let mockData = {
+            todayCalls: 12, monthCalls: 45, monthTransfers: 8, diasLaborados: 1,
+            productividad: 71.4, estatus: 'Promedio',
+            recentHistory: ['10:30 - Llamada', '10:15 - Transferencia'],
+            streakCount: 4, peakText: '10:00 - 11:00',
+            faltantesHoy: 51, promDiario: 45.0, goalPerDay: 63
+        };
 
-        // Wrapper para llamar Apps Script
         function runBackend(funcName, args = []) {
             mostrarCarga(true);
             return new Promise((resolve, reject) => {
                 if (isAppsScript) {
                     google.script.run
                         .withSuccessHandler(res => { mostrarCarga(false); resolve(res); })
-                        .withFailureHandler(err => { mostrarCarga(false); alert("Error de red"); reject(err); })
+                        .withFailureHandler(err => {
+                            mostrarCarga(false);
+                            const msg = err && err.message ? err.message : 'Error de red';
+                            showToast(msg, 'error');
+                            reject(err);
+                        })
                         [funcName].apply(null, args);
                 } else {
-                    // Simulación local
                     setTimeout(() => {
-                        if(funcName === 'addRecord') {
-                            if(args[0]==='Llamada') { mockData.todayCalls++; mockData.faltantesHoy = Math.max(0, 63 - mockData.todayCalls); }
+                        if (funcName === 'addRecord') {
+                            mockData.todayCalls++;
+                            mockData.faltantesHoy = Math.max(0, mockData.goalPerDay - mockData.todayCalls);
+                            if (args[0] === 'Transferencia') mockData.monthTransfers++;
                         }
-                        if(funcName === 'undoLast') {
-                            if(mockData.todayCalls > 0) mockData.todayCalls--;
+                        if (funcName === 'undoLast' && mockData.todayCalls > 0) {
+                            mockData.todayCalls--;
                         }
                         mostrarCarga(false);
                         resolve(mockData);
-                    }, 600);
+                    }, 400);
                 }
             });
         }
 
-        // Inicializar
         window.onload = () => {
-            runBackend('getData').then(actualizarUI);
+            runBackend('getData').then(actualizarUI).catch(() => {});
         };
 
         function mostrarCarga(show) {
+            isLoading = show;
             document.getElementById('loadingIndicator').style.display = show ? 'flex' : 'none';
-            const btns = document.querySelectorAll('button');
-            btns.forEach(b => { if(b.id !== 'btnUndo') b.disabled = show; });
+            document.querySelectorAll('button.btn-action').forEach(b => b.disabled = show);
+            actualizarBotonDeshacer();
         }
 
-        // Acciones
         function registrar(tipo) {
-            playSound('pop'); 
+            if (isLoading) return;
+            playSound('pop');
             runBackend('addRecord', [tipo]).then(res => {
                 registrarHistorial();
                 actualizarUI(res);
                 showToast(`¡${tipo} registrada!`);
-            });
+            }).catch(() => {});
         }
 
-        // Lógica de deshacer
         function registrarHistorial() {
-            if(undosDisponibles < 2) undosDisponibles++;
+            if (undosDisponibles < 2) undosDisponibles++;
             actualizarBotonDeshacer();
         }
 
         function deshacer() {
-            if(undosDisponibles > 0) {
-                playSound('pop');
-                runBackend('undoLast').then(res => {
-                    undosDisponibles--;
-                    actualizarBotonDeshacer();
-                    actualizarUI(res);
-                    showToast('Movimiento deshecho', 'error');
-                });
-            }
+            if (isLoading || undosDisponibles <= 0) return;
+            playSound('pop');
+            runBackend('undoLast').then(res => {
+                undosDisponibles--;
+                actualizarBotonDeshacer();
+                actualizarUI(res);
+                showToast('Movimiento deshecho', 'warn');
+            }).catch(() => {});
         }
 
         function actualizarBotonDeshacer() {
             const btn = document.getElementById('btnUndo');
             document.getElementById('undoCountText').innerText = undosDisponibles;
-            btn.disabled = (undosDisponibles === 0);
+            btn.disabled = isLoading || undosDisponibles === 0;
         }
 
-        // Actualizar Interfaz
         function actualizarUI(data) {
             document.getElementById('uiTodayCalls').innerText = data.todayCalls;
             document.getElementById('uiMonthCalls').innerText = data.monthCalls;
-            
-            // Nuevos contadores
+            document.getElementById('uiMonthTransfers').innerText = data.monthTransfers || 0;
+
             const uiFaltantes = document.getElementById('uiFaltantes');
             uiFaltantes.innerText = data.faltantesHoy;
-            if(data.faltantesHoy === 0) {
-                uiFaltantes.classList.replace('text-rose-500', 'text-emerald-500');
+            if (data.faltantesHoy === 0) {
+                uiFaltantes.classList.remove('text-rose-500');
+                uiFaltantes.classList.add('text-emerald-500');
             } else {
-                uiFaltantes.classList.replace('text-emerald-500', 'text-rose-500');
+                uiFaltantes.classList.remove('text-emerald-500');
+                uiFaltantes.classList.add('text-rose-500');
             }
 
             document.getElementById('uiPromedio').innerText = data.promDiario;
             document.getElementById('uiDays').innerText = data.diasLaborados;
-            
-            // Sub métricas
+            if (data.goalPerDay) document.getElementById('uiGoal').innerText = data.goalPerDay;
+
             document.getElementById('uiStreak').innerText = data.streakCount || 0;
             document.getElementById('uiPeak').innerText = data.peakText || 'Aún sin datos';
 
             const historyUl = document.getElementById('uiHistory');
             historyUl.innerHTML = '';
-            if(data.recentHistory && data.recentHistory.length > 0) {
+            if (data.recentHistory && data.recentHistory.length > 0) {
                 data.recentHistory.forEach(r => {
+                    const [time, type] = r.split(' - ');
                     const li = document.createElement('li');
                     li.className = "text-xs border-b border-slate-100 pb-1.5 pt-0.5 last:border-0";
-                    li.innerHTML = `<span class="text-indigo-600 font-medium mr-1">${r.split(' - ')[0]}</span> <span class="text-slate-600">${r.split(' - ')[1]}</span>`;
+                    const colorCls = type === 'Transferencia' ? 'text-sky-600' : 'text-indigo-600';
+                    li.innerHTML = `<span class="${colorCls} font-medium mr-1"></span> <span class="text-slate-600"></span>`;
+                    li.children[0].textContent = time;
+                    li.children[1].textContent = type;
                     historyUl.appendChild(li);
                 });
             } else {
                 historyUl.innerHTML = '<li class="italic text-xs text-slate-400">Sin registros hoy</li>';
             }
 
-            // Actualizar porcentaje y estatus
-            const prod = Math.min(data.productividad, 100); 
+            const prod = Math.min(data.productividad, 100);
             document.getElementById('uiProdPercent').innerText = data.productividad + '%';
-            
+
             const circle = document.getElementById('prodRing');
-            const circumference = 54 * 2 * Math.PI; // 339.292
+            const circumference = 54 * 2 * Math.PI;
             const offset = circumference - (prod / 100) * circumference;
             circle.style.strokeDashoffset = offset;
 
-            // Colores Estatus
             const statusEl = document.getElementById('uiStatus');
             statusEl.innerText = data.estatus;
             statusEl.className = "text-3xl font-bold mt-1 mb-2";
@@ -288,11 +302,13 @@
             }
         }
 
-        // --- FUNCIONES: Sonido, Toasts y Atajos ---
-        
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // AudioContext lazy: solo se crea tras la primera interacción del usuario.
+        let audioCtx = null;
         function playSound(type) {
             try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
                 if (audioCtx.state === 'suspended') audioCtx.resume();
                 const osc = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
@@ -308,37 +324,49 @@
                     osc.start();
                     osc.stop(audioCtx.currentTime + 0.1);
                 }
-            } catch(e) { console.log("Audio bloqueado."); }
+            } catch (e) { /* Audio bloqueado por el navegador */ }
         }
 
         function showToast(msg, type = 'success') {
             let container = document.getElementById('toastContainer');
-            if(!container) {
+            if (!container) {
                 container = document.createElement('div');
                 container.id = 'toastContainer';
                 container.className = 'toast-container';
                 document.body.appendChild(container);
             }
             const toast = document.createElement('div');
-            toast.className = `toast ${type === 'error' ? 'error' : ''}`;
-            toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-rotate-left' : 'fa-check-circle'} ${type === 'error' ? 'text-rose-500' : 'text-emerald-500'} text-lg"></i> <span>${msg}</span>`;
+            const cls = type === 'error' ? 'error' : (type === 'warn' ? 'warn' : '');
+            toast.className = `toast ${cls}`;
+            const icon = type === 'error'
+                ? 'fa-circle-exclamation text-rose-500'
+                : type === 'warn'
+                    ? 'fa-rotate-left text-amber-500'
+                    : 'fa-check-circle text-emerald-500';
+            const iconEl = document.createElement('i');
+            iconEl.className = `fa-solid ${icon} text-lg`;
+            const span = document.createElement('span');
+            span.textContent = msg;
+            toast.appendChild(iconEl);
+            toast.appendChild(span);
             container.appendChild(toast);
-            
-            // Remover después de la animación
-            setTimeout(() => { if(toast.parentNode) toast.remove(); }, 2800);
+
+            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 2800);
         }
 
         document.addEventListener('keydown', (e) => {
-            // Evitar conflictos si por alguna razón escribe en un campo
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-            // Atajos solicitados (sin ventas ni transferencias)
             if (e.key === "'") {
                 e.preventDefault();
                 registrar('Llamada');
+            } else if (e.key === 't' || e.key === 'T') {
+                if (e.ctrlKey || e.metaKey || e.altKey) return;
+                e.preventDefault();
+                registrar('Transferencia');
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                 e.preventDefault();
-                if(undosDisponibles > 0) deshacer();
+                if (undosDisponibles > 0) deshacer();
             }
         });
     </script>
