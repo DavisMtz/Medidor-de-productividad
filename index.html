@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productividad Diaria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .status-Buena { color: #10b981; } /* Emerald */
+        .status-Promedio { color: #f59e0b; } /* Amber */
+        .status-Debemos { color: #ef4444; } /* Red */
+        
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        /* Estilos para Toasts */
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 50; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: white; border-left: 4px solid #10b981; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 12px 20px; border-radius: 8px; display: flex; align-items: center; gap: 10px; font-weight: 600; transform: translateX(120%); animation: slideIn 0.3s forwards, fadeOut 0.3s 2.5s forwards; }
+        .toast.error { border-left-color: #ef4444; }
+        @keyframes slideIn { to { transform: translateX(0); } }
+        @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen pb-10">
+
+    <!-- Navbar -->
+    <nav class="bg-indigo-600 text-white shadow-md p-4 sticky top-0 z-10">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-headset"></i> Panel de Llamadas
+            </h1>
+            <div id="loadingIndicator" class="hidden flex items-center gap-2 text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
+                <div class="spinner w-4 h-4"></div> Sincronizando...
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto mt-6 px-4">
+        
+        <!-- Estado de Productividad -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 flex flex-col md:flex-row items-center gap-6">
+            <div class="relative w-32 h-32 flex-shrink-0">
+                <svg class="w-full h-full" viewBox="0 0 120 120">
+                    <circle class="text-slate-100 stroke-current" stroke-width="8" cx="60" cy="60" r="54" fill="transparent"></circle>
+                    <circle id="prodRing" class="progress-ring__circle text-indigo-500 stroke-current" stroke-width="8" stroke-linecap="round" cx="60" cy="60" r="54" fill="transparent" stroke-dasharray="339.292" stroke-dashoffset="339.292"></circle>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span id="uiProdPercent" class="text-2xl font-bold">0%</span>
+                </div>
+            </div>
+            <div class="flex-1 text-center md:text-left">
+                <h2 class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Estatus del Mes</h2>
+                <div id="uiStatus" class="text-3xl font-bold mt-1 mb-2 status-Debemos">Cargando...</div>
+                <p class="text-slate-600 text-sm">
+                    Meta de <span class="font-bold">63</span> llamadas por día laborado.
+                    <br>Días laborados este mes: <span id="uiDays" class="font-bold">0</span>
+                </p>
+            </div>
+        </section>
+
+        <!-- Métricas Grid Principal -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <!-- Llamadas Hoy -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
+                <div class="text-slate-500 text-xs font-semibold uppercase mb-1">Llamadas (Hoy)</div>
+                <div class="flex items-end gap-2">
+                    <div id="uiTodayCalls" class="text-3xl font-bold text-indigo-600">0</div>
+                </div>
+            </div>
+            <!-- Meta Faltantes -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
+                <div class="text-slate-500 text-xs font-semibold uppercase mb-1" title="Llamadas necesarias para alcanzar la meta de 63">Faltantes (Hoy)</div>
+                <div id="uiFaltantes" class="text-2xl font-bold text-rose-500">0</div>
+            </div>
+            <!-- Llamadas Mes -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
+                <div class="text-slate-500 text-xs font-semibold uppercase mb-1">Llamadas (Mes)</div>
+                <div id="uiMonthCalls" class="text-2xl font-bold text-slate-700">0</div>
+            </div>
+            <!-- Promedio Diario -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
+                <div class="text-slate-500 text-xs font-semibold uppercase mb-1" title="Promedio de llamadas por cada día laborado">Prom. Diario</div>
+                <div id="uiPromedio" class="text-2xl font-bold text-slate-700">0</div>
+            </div>
+        </div>
+
+        <!-- Sub Métricas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <!-- Racha (Streak) -->
+            <div class="bg-gradient-to-r from-orange-500 to-rose-500 rounded-xl shadow-sm text-white p-4 flex flex-col justify-center items-center text-center">
+                <div class="text-white/90 text-xs font-semibold uppercase mb-1 flex items-center gap-1">
+                    <i class="fa-solid fa-fire"></i> Racha (Última hr)
+                </div>
+                <div class="text-2xl font-bold"><span id="uiStreak">0</span><span class="text-sm font-medium opacity-80 ml-1">llamadas</span></div>
+            </div>
+
+            <!-- Pico de Productividad -->
+            <div class="bg-indigo-50 rounded-xl shadow-sm border border-indigo-100 p-4 flex flex-col justify-center items-center text-center">
+                <div class="text-indigo-500 text-xs font-semibold uppercase mb-1 flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-trend-up"></i> Mejor Hora Hoy
+                </div>
+                <div id="uiPeak" class="text-xl font-bold text-indigo-700">Aún sin datos</div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
+            <h3 class="text-lg font-bold text-slate-800">Registrar Movimiento</h3>
+            
+            <!-- Mini-Historial -->
+            <div class="text-sm bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm w-full md:w-auto relative">
+                <div class="font-semibold text-slate-600 flex items-center gap-2 mb-2">
+                    <i class="fa-solid fa-clock-rotate-left text-slate-400"></i> Historial Reciente
+                </div>
+                <ul id="uiHistory" class="space-y-1 text-slate-600">
+                    <li class="italic text-xs text-slate-400">Cargando...</li>
+                </ul>
+                <div class="absolute text-[10px] text-slate-400 right-3 top-3" title="Atajos de teclado"><i class="fa-solid fa-keyboard"></i> <b>'</b> (Llamada)</div>
+            </div>
+        </div>
+
+        <div class="flex justify-center mb-4">
+            
+            <!-- Botón Llamada -->
+            <button onclick="registrar('Llamada')" class="btn-action bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl p-8 shadow-sm transition-all transform active:scale-95 flex flex-col items-center justify-center gap-3 w-full md:w-2/3">
+                <i class="fa-solid fa-headset text-4xl mb-1"></i>
+                <span class="font-bold text-2xl">+1 Llamada</span>
+                <span class="text-sm text-indigo-200">Presiona la tecla <b>'</b></span>
+            </button>
+
+        </div>
+
+        <!-- Botón Deshacer -->
+        <div class="mt-8 text-center border-t border-slate-200 pt-6">
+            <button id="btnUndo" onclick="deshacer()" disabled class="bg-rose-100 text-rose-600 hover:bg-rose-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold py-3 px-6 rounded-full transition-colors flex items-center justify-center mx-auto gap-2">
+                <i class="fa-solid fa-rotate-left"></i> Deshacer último (<span id="undoCountText">0</span>/2)
+            </button>
+            <p class="text-xs text-slate-400 mt-2">Puedes deshacer tus últimos 2 movimientos de esta sesión.</p>
+        </div>
+
+    </main>
+
+    <!-- Scripts Logica -->
+    <script>
+        const isAppsScript = typeof google !== 'undefined' && google.script;
+        let undosDisponibles = 0; // Límite de 2 por sesión
+
+        // Mocks para previsualización rápida
+        let mockData = { todayCalls: 12, monthCalls: 45, diasLaborados: 1, productividad: 71.4, estatus: 'Promedio', recentHistory: ['10:30 - Llamada', '10:15 - Llamada'], streakCount: 4, peakText: '10:00 - 11:00', faltantesHoy: 51, promDiario: 45.0 };
+
+        // Wrapper para llamar Apps Script
+        function runBackend(funcName, args = []) {
+            mostrarCarga(true);
+            return new Promise((resolve, reject) => {
+                if (isAppsScript) {
+                    google.script.run
+                        .withSuccessHandler(res => { mostrarCarga(false); resolve(res); })
+                        .withFailureHandler(err => { mostrarCarga(false); alert("Error de red"); reject(err); })
+                        [funcName].apply(null, args);
+                } else {
+                    // Simulación local
+                    setTimeout(() => {
+                        if(funcName === 'addRecord') {
+                            if(args[0]==='Llamada') { mockData.todayCalls++; mockData.faltantesHoy = Math.max(0, 63 - mockData.todayCalls); }
+                        }
+                        if(funcName === 'undoLast') {
+                            if(mockData.todayCalls > 0) mockData.todayCalls--;
+                        }
+                        mostrarCarga(false);
+                        resolve(mockData);
+                    }, 600);
+                }
+            });
+        }
+
+        // Inicializar
+        window.onload = () => {
+            runBackend('getData').then(actualizarUI);
+        };
+
+        function mostrarCarga(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'flex' : 'none';
+            const btns = document.querySelectorAll('button');
+            btns.forEach(b => { if(b.id !== 'btnUndo') b.disabled = show; });
+        }
+
+        // Acciones
+        function registrar(tipo) {
+            playSound('pop'); 
+            runBackend('addRecord', [tipo]).then(res => {
+                registrarHistorial();
+                actualizarUI(res);
+                showToast(`¡${tipo} registrada!`);
+            });
+        }
+
+        // Lógica de deshacer
+        function registrarHistorial() {
+            if(undosDisponibles < 2) undosDisponibles++;
+            actualizarBotonDeshacer();
+        }
+
+        function deshacer() {
+            if(undosDisponibles > 0) {
+                playSound('pop');
+                runBackend('undoLast').then(res => {
+                    undosDisponibles--;
+                    actualizarBotonDeshacer();
+                    actualizarUI(res);
+                    showToast('Movimiento deshecho', 'error');
+                });
+            }
+        }
+
+        function actualizarBotonDeshacer() {
+            const btn = document.getElementById('btnUndo');
+            document.getElementById('undoCountText').innerText = undosDisponibles;
+            btn.disabled = (undosDisponibles === 0);
+        }
+
+        // Actualizar Interfaz
+        function actualizarUI(data) {
+            document.getElementById('uiTodayCalls').innerText = data.todayCalls;
+            document.getElementById('uiMonthCalls').innerText = data.monthCalls;
+            
+            // Nuevos contadores
+            const uiFaltantes = document.getElementById('uiFaltantes');
+            uiFaltantes.innerText = data.faltantesHoy;
+            if(data.faltantesHoy === 0) {
+                uiFaltantes.classList.replace('text-rose-500', 'text-emerald-500');
+            } else {
+                uiFaltantes.classList.replace('text-emerald-500', 'text-rose-500');
+            }
+
+            document.getElementById('uiPromedio').innerText = data.promDiario;
+            document.getElementById('uiDays').innerText = data.diasLaborados;
+            
+            // Sub métricas
+            document.getElementById('uiStreak').innerText = data.streakCount || 0;
+            document.getElementById('uiPeak').innerText = data.peakText || 'Aún sin datos';
+
+            const historyUl = document.getElementById('uiHistory');
+            historyUl.innerHTML = '';
+            if(data.recentHistory && data.recentHistory.length > 0) {
+                data.recentHistory.forEach(r => {
+                    const li = document.createElement('li');
+                    li.className = "text-xs border-b border-slate-100 pb-1.5 pt-0.5 last:border-0";
+                    li.innerHTML = `<span class="text-indigo-600 font-medium mr-1">${r.split(' - ')[0]}</span> <span class="text-slate-600">${r.split(' - ')[1]}</span>`;
+                    historyUl.appendChild(li);
+                });
+            } else {
+                historyUl.innerHTML = '<li class="italic text-xs text-slate-400">Sin registros hoy</li>';
+            }
+
+            // Actualizar porcentaje y estatus
+            const prod = Math.min(data.productividad, 100); 
+            document.getElementById('uiProdPercent').innerText = data.productividad + '%';
+            
+            const circle = document.getElementById('prodRing');
+            const circumference = 54 * 2 * Math.PI; // 339.292
+            const offset = circumference - (prod / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+
+            // Colores Estatus
+            const statusEl = document.getElementById('uiStatus');
+            statusEl.innerText = data.estatus;
+            statusEl.className = "text-3xl font-bold mt-1 mb-2";
+            circle.classList.remove('text-indigo-500', 'text-emerald-500', 'text-amber-500', 'text-rose-500');
+
+            if (data.estatus.includes("Buena")) {
+                statusEl.classList.add('status-Buena');
+                circle.classList.add('text-emerald-500');
+            } else if (data.estatus.includes("Promedio")) {
+                statusEl.classList.add('status-Promedio');
+                circle.classList.add('text-amber-500');
+            } else {
+                statusEl.classList.add('status-Debemos');
+                circle.classList.add('text-rose-500');
+            }
+        }
+
+        // --- FUNCIONES: Sonido, Toasts y Atajos ---
+        
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                if (type === 'pop') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.1);
+                }
+            } catch(e) { console.log("Audio bloqueado."); }
+        }
+
+        function showToast(msg, type = 'success') {
+            let container = document.getElementById('toastContainer');
+            if(!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-rotate-left' : 'fa-check-circle'} ${type === 'error' ? 'text-rose-500' : 'text-emerald-500'} text-lg"></i> <span>${msg}</span>`;
+            container.appendChild(toast);
+            
+            // Remover después de la animación
+            setTimeout(() => { if(toast.parentNode) toast.remove(); }, 2800);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            // Evitar conflictos si por alguna razón escribe en un campo
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            // Atajos solicitados (sin ventas ni transferencias)
+            if (e.key === "'") {
+                e.preventDefault();
+                registrar('Llamada');
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                if(undosDisponibles > 0) deshacer();
+            }
+        });
+    </script>
+</body>
+</html>
